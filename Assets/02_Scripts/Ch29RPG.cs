@@ -15,7 +15,7 @@ public class Ch29RPG : MonoBehaviour
     private Transform cameraTr;
     private Transform cameraPivotTr;
     private float cameraDistance = 0f;
-    private Vector3 mouseMove = Vector3.zero;
+    [SerializeField]private Vector3 mouseMove = Vector3.zero;
     private LayerMask playerLayer;
 
     private Transform charactorTr;
@@ -105,7 +105,7 @@ public class Ch29RPG : MonoBehaviour
     {
         float cameraHeight = 1.3f;
         cameraPivotTr.position = transform.position + (Vector3.up * cameraHeight);
-        mouseMove += new Vector3(-Input.GetAxisRaw("Mouse Y") * 8f, Input.GetAxisRaw("Mouse X") * 8f, 0f);
+        mouseMove += new Vector3(-Input.GetAxisRaw("Mouse Y") * 7f, Input.GetAxisRaw("Mouse X") * 7f, 0f);
         if (mouseMove.x < -40.0f)
             mouseMove.x = -40.0f;
         else if (mouseMove.x > 40.0f)
@@ -115,9 +115,15 @@ public class Ch29RPG : MonoBehaviour
         RaycastHit hit;
         Vector3 dir = (cameraTr.position - cameraPivotTr.position).normalized;
         if (Physics.Raycast(cameraPivotTr.position, dir, out hit, cameraDistance, ~playerLayer))
-            cameraTr.localPosition = Vector3.back * hit.distance * 0.8f;
+        {
+            Vector3 changeLocalPos = Vector3.back * hit.distance;
+            cameraTr.localPosition = Vector3.Slerp(cameraTr.localPosition, changeLocalPos, Time.deltaTime * 15f);
+        }
         else
-            cameraTr.localPosition = Vector3.back * cameraDistance;
+        {
+            Vector3 originLocalPos = Vector3.back * cameraDistance;
+            cameraTr.localPosition = Vector3.Slerp(cameraTr.localPosition, originLocalPos, Time.deltaTime * 15f);
+        }
     }
     private void CameraDistanceCtrl()
     {
@@ -194,7 +200,7 @@ public class Ch29RPG : MonoBehaviour
             if (IsRun)
             {
                 Quaternion charRot = Quaternion.LookRotation(moveVelocity);
-                charRot.x = cameraRot.z = 0f;
+                charRot.x = charRot.z = 0f;
                 charactorTr.rotation = Quaternion.Slerp(charactorTr.rotation, charRot, Time.deltaTime * 10f);
             }
             else
