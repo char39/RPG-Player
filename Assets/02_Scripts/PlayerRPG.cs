@@ -79,8 +79,7 @@ public class PlayerRPG : MonoBehaviour
         InputGetAxis();
         FreezeXZ();
         CameraDistanceCtrl();
-        PlayerStates();         // IDLE, ATTACK, UNDER_ATTACK, DEAD
-        PlayerAttack();
+        PlayerStates();
     }
 
     void LateUpdate()
@@ -105,7 +104,7 @@ public class PlayerRPG : MonoBehaviour
         GetAxisRaw_V = Input.GetAxisRaw("Vertical");
     }
 
-    private void CameraCtrl()
+    private void CameraCtrl()                           // 카메라 컨트롤
     {
         float cameraHeight = 1.3f;
         cameraPivotTr.position = transform.position + (Vector3.up * cameraHeight);
@@ -123,17 +122,17 @@ public class PlayerRPG : MonoBehaviour
         else
             cameraTr.localPosition = Vector3.back * cameraDistance;
     }
-    private void CameraDistanceCtrl()
+    private void CameraDistanceCtrl()                   // 카메라 거리 조절
     {
         cameraDistance -= Input.GetAxis("Mouse ScrollWheel");
         cameraDistance = Mathf.Clamp(cameraDistance, 2.2f, 10f);
     }
-    private void FreezeXZ()
+    private void FreezeXZ()                             // X, Z축 회전값 고정
     {
         transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f);
     }
     
-    private void PlayerStates()
+    private void PlayerStates()                         // IDLE, ATTACK, UNDER_ATTACK, DEAD
     {
         switch (playerState)
         {
@@ -152,7 +151,7 @@ public class PlayerRPG : MonoBehaviour
                 break;
         }
     }
-    private void Player_Idle_Move()
+    private void Player_Idle_Move()                         // IDLE 상태에서 이동
     {
         RunCheck();
         if (chCtrl.isGrounded)                                  // 플레이어가 땅에 닿았으면
@@ -177,14 +176,14 @@ public class PlayerRPG : MonoBehaviour
         chCtrl.Move(moveVelocity * Time.deltaTime);             // 캐릭터 컨트롤러 이동
 
     }
-    private void RunCheck()
+    private void RunCheck()                                     // 달리기 상태 체크
     {
         if (!IsRun && Input.GetKey(KeyCode.LeftShift))              // 달리기 상태가 아니고, Shift 키를 눌렀으면
             IsRun = true;                                               // 달리기 상태로 변경
         else if (IsRun && GetAxis_H == 0 && GetAxis_V == 0)         // 달리기 상태이고, 이동키를 뗐으면
             IsRun = false;                                              // 걷기 상태로 변경
     }
-    private void CalculatorInputMove()
+    private void CalculatorInputMove()                          // 이동 계산
     {
         moveVelocity = new Vector3(GetAxisRaw_H, 0f, GetAxisRaw_V).normalized * (IsRun ? runSpeed : walkSpeed);     // 이동 벡터
         ani.SetFloat(hashSpeedX, GetAxis_H);
@@ -205,13 +204,13 @@ public class PlayerRPG : MonoBehaviour
                 modelTr.rotation = Quaternion.Slerp(modelTr.rotation, cameraRot, Time.deltaTime * 10f);         // 모델의 회전값을 카메라 Pivot의 회전값으로 설정
         }
     }
-    private bool GroundCheck(out RaycastHit hit)
+    private bool GroundCheck(out RaycastHit hit)                // 땅에 닿았는지 체크
     {
         return Physics.Raycast(transform.position, Vector3.down, out hit, 0.25f);           // 플레이어의 아래쪽으로 레이캐스트를 쏴서 땅에 닿았는지 확인
     }
 
     private float nextTime = 0f;
-    private void AttackTimeState()
+    private void AttackTimeState()                              // 공격 시간 체크
     {
         nextTime += Time.deltaTime;
         if (nextTime >= 1.2f)
@@ -219,7 +218,7 @@ public class PlayerRPG : MonoBehaviour
             playerState = PlayerState.IDLE;
         }
     }
-    private void PlayerAttack()
+    private void PlayerAttack()                             // 공격
     {
         if (Input.GetButtonDown("Fire1"))   // Left Ctrl, Left Mouse Down
         {
@@ -230,7 +229,7 @@ public class PlayerRPG : MonoBehaviour
             nextTime = 0f;
         }
     }
-    private void PlayerShieldAttack()
+    private void PlayerShieldAttack()                       // 방패 공격
     {
         if (Input.GetButtonDown("Fire2"))   // Left Alt, Right Mouse Down
         {
@@ -241,5 +240,19 @@ public class PlayerRPG : MonoBehaviour
             nextTime = 0f;
         }
     }
+
+
+
+/*
+    private void OnDrawGizmos()
+    {
+        if (!cameraTr || !cameraPivotTr)
+            return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(cameraPivotTr.position, (cameraTr.position - cameraPivotTr.position).normalized * cameraDistance);   // 카메라 Pivot에서 카메라까지의 Ray
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(cameraTr.position, cameraPivotTr.position);                                                         // 카메라에서 카메라 Pivot까지의 벡터
+    }
+*/
 
 }
