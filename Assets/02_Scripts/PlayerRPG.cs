@@ -5,6 +5,8 @@ using UnityEngine.XR;
 
 public class PlayerRPG : MonoBehaviour
 {
+    #region Vars
+
     public enum PlayerState { IDLE, ATTACK, UNDER_ATTACK, DEAD }
     public PlayerState playerState = PlayerState.IDLE;
 
@@ -23,6 +25,7 @@ public class PlayerRPG : MonoBehaviour
     [SerializeField] private Animator ani;
     [SerializeField] private CharacterController chCtrl;
     [SerializeField] private Vector3 moveVelocity = Vector3.zero;   // 플레이어 이동 벡터
+
     [SerializeField] private bool isGrounded = false;
     public bool IsGrounded
     {
@@ -43,11 +46,28 @@ public class PlayerRPG : MonoBehaviour
             ani.SetBool("isRun", value);
         }
     }
+    [SerializeField] private bool isDead;
+    public bool IsDead
+    {
+        get { return isDead; }
+        set
+        {
+            isDead = value;
+            ani.SetBool("isDead", value);
+        }
+    }
+    
+    private readonly int hashAttack = Animator.StringToHash("swordAttackTrigger");
+    private readonly int hashShieldAttack = Animator.StringToHash("shieldAttackTrigger");
+    private readonly int hashSpeedX = Animator.StringToHash("speedX");
+    private readonly int hashSpeedY = Animator.StringToHash("speedY");
 
     private float GetAxis_H;
     private float GetAxis_V;
     private float GetAxisRaw_H;
     private float GetAxisRaw_V;
+
+    #endregion
 
     void Start()
     {
@@ -59,7 +79,8 @@ public class PlayerRPG : MonoBehaviour
         InputGetAxis();
         FreezeXZ();
         CameraDistanceCtrl();
-        PlayerStates();
+        PlayerStates();         // IDLE, ATTACK, UNDER_ATTACK, DEAD
+        PlayerAttack();
     }
 
     void LateUpdate()
@@ -72,11 +93,10 @@ public class PlayerRPG : MonoBehaviour
         cameraTr = Camera.main.transform;
         cameraPivotTr = cameraTr.parent;
         modelTr = GetComponentsInChildren<Transform>()[1];
-        ani = GetComponent<Animator>();
+        ani = transform.GetChild(0).GetComponent<Animator>();
         chCtrl = GetComponent<CharacterController>();
         cameraDistance = 5f;
     }
-
     private void InputGetAxis()
     {
         GetAxis_H = Input.GetAxis("Horizontal");
@@ -121,7 +141,7 @@ public class PlayerRPG : MonoBehaviour
                 Player_Idle_Move();
                 break;
             case PlayerState.ATTACK:
-
+                AttackTimeState();
                 break;
             case PlayerState.UNDER_ATTACK:
 
@@ -145,6 +165,8 @@ public class PlayerRPG : MonoBehaviour
                 moveVelocity.y = IsRun ? -runSpeed : -walkSpeed;        // 이동 속도 y를 설정. 달리기 상태이면 runSpeed, 걷기 상태이면 walkSpeed
             else                                                    // 땅에 닿지 않았으면
                 moveVelocity.y = -1f;                                   // 이동 속도 y를 -1로 설정
+            PlayerAttack();
+            PlayerShieldAttack();
         }
         else                                                    // 플레이어가 땅에 닿지 않았으면
         {
@@ -157,7 +179,7 @@ public class PlayerRPG : MonoBehaviour
     }
     private void RunCheck()
     {
-        if (!IsRun && Input.GetKey(KeyCode.LeftShift) && (GetAxis_H != 0 && GetAxis_V != 0))              // 달리기 상태가 아니고, Shift 키를 눌렀으면
+        if (!IsRun && Input.GetKey(KeyCode.LeftShift))              // 달리기 상태가 아니고, Shift 키를 눌렀으면
             IsRun = true;                                               // 달리기 상태로 변경
         else if (IsRun && GetAxis_H == 0 && GetAxis_V == 0)         // 달리기 상태이고, 이동키를 뗐으면
             IsRun = false;                                              // 걷기 상태로 변경
@@ -165,8 +187,8 @@ public class PlayerRPG : MonoBehaviour
     private void CalculatorInputMove()
     {
         moveVelocity = new Vector3(GetAxisRaw_H, 0f, GetAxisRaw_V).normalized * (IsRun ? runSpeed : walkSpeed);     // 이동 벡터
-        ani.SetFloat("speedX", GetAxis_H);
-        ani.SetFloat("speedY", GetAxis_V);
+        ani.SetFloat(hashSpeedX, GetAxis_H);
+        ani.SetFloat(hashSpeedY, GetAxis_V);
         moveVelocity = transform.TransformDirection(moveVelocity);                                      // 이동 벡터를 카메라 기준으로 변환
         if (moveVelocity.sqrMagnitude > 0.01f)                                                          // 이동 벡터가 0.01보다 크다면
         {
@@ -187,4 +209,37 @@ public class PlayerRPG : MonoBehaviour
     {
         return Physics.Raycast(transform.position, Vector3.down, out hit, 0.25f);           // 플레이어의 아래쪽으로 레이캐스트를 쏴서 땅에 닿았는지 확인
     }
+
+    private float nextTime = 0f;
+    private void AttackTimeState()
+    {
+        nextTime += Time.deltaTime;
+        if (nextTime >= 1.2f)
+        {
+            playerState = PlayerState.IDLE;
+        }
+    }
+    private void PlayerAttack()
+    {
+        if (Input.GetButtonDown("Fire1"))   // Left Ctrl, Left Mouse Down
+        {
+            playerState = PlayerState.ATTACK;
+            ani.SetTrigger(hashAttack);
+            ani.SetFloat(hashSpeedX, 0f);
+            ani.SetFloat(hashSpeedY, 0f);
+            nextTime = 0f;
+        }
+    }
+    private void PlayerShieldAttack()
+    {
+        if (Input.GetButtonDown("Fire2"))   // Left Alt, Right Mouse Down
+        {
+            playerState = PlayerState.ATTACK;
+            ani.SetTrigger(hashShieldAttack);
+            ani.SetFloat(hashSpeedX, 0f);
+            ani.SetFloat(hashSpeedY, 0f);
+            nextTime = 0f;
+        }
+    }
+
 }
