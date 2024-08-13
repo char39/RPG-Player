@@ -9,7 +9,7 @@ public class WizardPlayer : MonoBehaviour
 
     private NavMeshAgent navAgent;
     private Animator ani;
-
+    private Transform hitBox;
 
     #endregion /////////////////////////////////////////////////////////////////
     #region ///////////////////////////     Click    ///////////////////////////
@@ -25,8 +25,12 @@ public class WizardPlayer : MonoBehaviour
     private readonly int hashAttack = Animator.StringToHash("AttackTrigger");       // 공격은 Z, 움직일 때 못함
     private readonly int hashSkill = Animator.StringToHash("SkillTrigger");         // 스킬은 X, 움직일 때 못함
     public int moveState = 0;      // 0:정지, 1:걷기, 2:달리기
+    public float walkSpeed = 4.0f;
+    public float runSpeed = 8.0f;
     public bool isAttack = false;
     public bool isSkill = false;
+
+    public bool isDie = false;
 
     #endregion /////////////////////////////////////////////////////////////////
 
@@ -35,10 +39,13 @@ public class WizardPlayer : MonoBehaviour
         navAgent = GetComponent<NavMeshAgent>();
         ani = GetComponent<Animator>();
         groundLayer = 1 << LayerMask.NameToLayer("Ground");
+        hitBox = transform.GetChild(3).transform;
     }
 
     void Update()
     {
+        if (isDie)
+            return;
         ClickCheck();
         MoveMethod();
         AttackSkill();
@@ -99,7 +106,7 @@ public class WizardPlayer : MonoBehaviour
     {
         if (moveState == 0)
         {
-            if (navAgent.speed > 1.5f)
+            if (navAgent.speed > walkSpeed / runSpeed)
                 navAgent.speed = Mathf.Lerp(navAgent.speed, 0.0f, Time.deltaTime * 1f);
             else if (navAgent.speed > 0.0f)
                 navAgent.speed = Mathf.Lerp(navAgent.speed, -1.0f, Time.deltaTime * 1.5f);
@@ -110,10 +117,10 @@ public class WizardPlayer : MonoBehaviour
             }
         }
         else if (moveState == 1)
-            navAgent.speed = Mathf.Lerp(navAgent.speed, 1.5f, Time.deltaTime * 3.0f);
+            navAgent.speed = Mathf.Lerp(navAgent.speed, walkSpeed, Time.deltaTime * 3.0f);
         else if (moveState == 2)
-            navAgent.speed = Mathf.Lerp(navAgent.speed, 3.0f, Time.deltaTime * 3.0f);
-        ani.SetFloat(hashMoveSpeed, navAgent.speed);
+            navAgent.speed = Mathf.Lerp(navAgent.speed, runSpeed, Time.deltaTime * 3.0f);
+        ani.SetFloat(hashMoveSpeed, navAgent.speed / runSpeed);
     }
 
     private void AttackSkill()              // 공격, 스킬 결정 메서드
@@ -136,5 +143,23 @@ public class WizardPlayer : MonoBehaviour
     {
         isAttack = false;
         isSkill = false;
+    }
+
+    public void PlayerDie()                // 플레이어 사망 메서드
+    {
+        isDie = true;
+        moveState = 0;
+        navAgent.isStopped = true;
+        ani.SetFloat(hashMoveSpeed, 0.0f);
+        ani.SetTrigger("DieTrigger");
+    }
+
+    public void HitBoxOn()
+    {
+        hitBox.gameObject.SetActive(true);
+    }
+    public void HitBoxOff()
+    {
+        hitBox.gameObject.SetActive(false);
     }
 }
