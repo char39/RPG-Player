@@ -15,8 +15,8 @@ public class Ch29RPG : MonoBehaviour
     private Transform cameraTr;
     private Transform cameraPivotTr;
     private float cameraDistance = 0f;
-    [SerializeField]private Vector3 mouseMove = Vector3.zero;
-    private LayerMask playerLayer;
+    [SerializeField] private Vector3 mouseMove = Vector3.zero;
+    [SerializeField] private LayerMask playerLayer;
 
     private Transform charactorTr;
     private Animator ani;
